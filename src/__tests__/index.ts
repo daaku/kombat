@@ -48,6 +48,21 @@ test('Merkle.diff two empty Merkles', () => {
   expect(new Merkle().diff(new Merkle())).toBeUndefined();
 });
 
+test('Merkle.clone', () => {
+  const tree1 = new Merkle();
+  tree1.insert(new Timestamp(123, 42, nodeID));
+  // @ts-expect-error: testing private members here
+  expect(tree1.hash).toBe(1817861100);
+
+  const tree2 = tree1.clone();
+  tree2.insert(new Timestamp(456, 0, nodeID));
+  // @ts-expect-error: testing private members here
+  expect(tree2.hash).toBe(1253944810);
+
+  // @ts-expect-error: testing private members here
+  expect(tree1.hash).toBe(1817861100);
+});
+
 test('Clock.fromJSON', () => {
   const c = new Clock();
   const json = JSON.parse(JSON.stringify(c));

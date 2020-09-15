@@ -110,6 +110,15 @@ export class Merkle {
     return new Merkle(data.hash, children);
   }
 
+  // Clone the Merkle.
+  public clone(): Merkle {
+    const children: MerkleChildren = {};
+    Object.keys(this.children).forEach(
+      (k) => (children[k] = this.children[k].clone()),
+    );
+    return new Merkle(this.hash, children);
+  }
+
   private get childKeys(): string[] {
     return Object.keys(this.children);
   }
@@ -397,7 +406,7 @@ export class SyncDB {
     const toSend = await this.local.queryMessages(since);
     const syncResponse = await this.remote.sync({
       nodeID: this.clock.timestamp.nodeID,
-      merkle: this.clock.merkle,
+      merkle: this.clock.merkle.clone(),
       messages: toSend,
     });
     await this.recv(syncResponse.messages);
