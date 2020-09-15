@@ -290,7 +290,6 @@ export interface Message {
 }
 
 export interface SyncRequest {
-  nodeID: string;
   merkle: Merkle;
   messages: Message[];
 }
@@ -405,7 +404,6 @@ export class SyncDB {
     }
     const toSend = await this.local.queryMessages(since);
     const syncResponse = await this.remote.sync({
-      nodeID: this.clock.timestamp.nodeID,
       merkle: this.clock.merkle.clone(),
       messages: toSend,
     });

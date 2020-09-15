@@ -90,6 +90,8 @@ class LocalRemote implements Remote {
   public syncDB!: SyncDB;
   public history: { in: SyncRequest; out: SyncRequest }[] = [];
 
+  constructor(private nodeID: string) {}
+
   async sync(req: SyncRequest): Promise<SyncRequest> {
     this.syncDB.recv(req.messages);
     let toSend: Message[] = [];
@@ -101,11 +103,9 @@ class LocalRemote implements Remote {
         new Timestamp(diffTime, 0, '0').toJSON(),
       );
       // filter out messages from the requesting nodeID
-      toSend = toSend.filter((m) => !m.timestamp.endsWith(req.nodeID));
+      toSend = toSend.filter((m) => !m.timestamp.endsWith(this.nodeID));
     }
     const out: SyncRequest = {
-      // @ts-expect-error accessing private data
-      nodeID: this.syncDB.clock.timestamp.nodeID,
       // @ts-expect-error accessing private data
       merkle: this.syncDB.clock.merkle,
       messages: toSend,
@@ -204,8 +204,8 @@ function makePair(): [Side, Side] {
   const localA = new MemLocal();
   const localB = new MemLocal();
 
-  const remoteA = new LocalRemote();
-  const remoteB = new LocalRemote();
+  const remoteA = new LocalRemote(clockA.timestamp.nodeID);
+  const remoteB = new LocalRemote(clockB.timestamp.nodeID);
 
   const syncDBA = new SyncDB(clockA, remoteA, localA);
   const syncDBB = new SyncDB(clockB, remoteB, localB);
@@ -228,9 +228,9 @@ function makeTriple(): [MemLocal, Side, Side] {
   const localB = new MemLocal();
   const localServer = new MemLocal();
 
-  const remoteA = new LocalRemote();
-  const remoteB = new LocalRemote();
-  const remoteServer = new LocalRemote();
+  const remoteA = new LocalRemote(clockA.timestamp.nodeID);
+  const remoteB = new LocalRemote(clockB.timestamp.nodeID);
+  const remoteServer = new LocalRemote(clockServer.timestamp.nodeID);
 
   const syncDBA = new SyncDB(clockA, remoteA, localA);
   const syncDBB = new SyncDB(clockB, remoteB, localB);
