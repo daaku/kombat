@@ -13,7 +13,8 @@
     "check": "run-p 'check:*' 'test'",
     "build:js": "tsc && rm -rf lib/__tests__",
     "build": "run-p check:lint test build:*",
-    "test": "jest --modulePathIgnorePatterns 'lib/'"
+    "test": "jest --modulePathIgnorePatterns 'lib/'",
+    "deploy": "npm run build && npm publish --access=public"
   },
   "jest": {
     "preset": "ts-jest"
