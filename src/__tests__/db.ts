@@ -21,10 +21,15 @@ function sort(messages: Message[]) {
   });
 }
 
+function sc(syncDB: SyncDB): Clock {
+  // @ts-expect-error accessing private data
+  return syncDB.clock;
+}
+
 class MemLocal implements Local {
   public messages: Message[] = [];
   public db: any = {};
-  public lastSync?: string;
+  public meta: { [key: string]: string } = {};
 
   async applyChanges(messages: Message[]): Promise<void> {
     messages.forEach((msg) => {
@@ -77,26 +82,24 @@ class MemLocal implements Local {
     );
   }
 
-  async storeLastSync(timestamp: string): Promise<void> {
-    this.lastSync = timestamp;
+  async set(key: string, value: string): Promise<void> {
+    this.meta[key] = value;
   }
 
-  async queryLastSync(): Promise<string | undefined> {
-    return this.lastSync;
+  async get(key: string): Promise<string | undefined> {
+    return this.meta[key];
   }
 }
 
 class LocalRemote implements Remote {
   public syncDB!: SyncDB;
+  public nodeID!: string;
   public history: { in: SyncRequest; out: SyncRequest }[] = [];
 
-  constructor(private nodeID: string) {}
-
   async sync(req: SyncRequest): Promise<SyncRequest> {
-    this.syncDB.recv(req.messages);
+    await this.syncDB.recv(req.messages);
     let toSend: Message[] = [];
-    // @ts-expect-error accessing private data
-    const diffTime = req.merkle.diff(this.syncDB.clock.merkle);
+    const diffTime = req.merkle.diff(sc(this.syncDB).merkle);
     if (diffTime) {
       // @ts-expect-error accessing private data
       toSend = await this.syncDB.local.queryMessages(
@@ -106,8 +109,7 @@ class LocalRemote implements Remote {
       toSend = toSend.filter((m) => !m.timestamp.endsWith(this.nodeID));
     }
     const out: SyncRequest = {
-      // @ts-expect-error accessing private data
-      merkle: this.syncDB.clock.merkle,
+      merkle: sc(this.syncDB).merkle,
       messages: toSend,
     };
     this.history.push({ in: req, out: out });
@@ -197,21 +199,21 @@ interface Side {
   syncDB: SyncDB;
 }
 
-function makePair(): [Side, Side] {
-  const clockA = new Clock();
-  const clockB = new Clock();
-
+async function makePair(): Promise<[Side, Side]> {
   const localA = new MemLocal();
   const localB = new MemLocal();
 
-  const remoteA = new LocalRemote(clockA.timestamp.nodeID);
-  const remoteB = new LocalRemote(clockB.timestamp.nodeID);
+  const remoteA = new LocalRemote();
+  const remoteB = new LocalRemote();
 
-  const syncDBA = new SyncDB(clockA, remoteA, localA);
-  const syncDBB = new SyncDB(clockB, remoteB, localB);
+  const syncDBA = await SyncDB.new(remoteA, localA);
+  const syncDBB = await SyncDB.new(remoteB, localB);
 
   remoteA.syncDB = syncDBB;
+  remoteA.nodeID = sc(syncDBA).timestamp.nodeID;
+
   remoteB.syncDB = syncDBA;
+  remoteB.nodeID = sc(syncDBB).timestamp.nodeID;
 
   return [
     { local: localA, remote: remoteA, syncDB: syncDBA },
@@ -219,25 +221,26 @@ function makePair(): [Side, Side] {
   ];
 }
 
-function makeTriple(): [MemLocal, Side, Side] {
-  const clockA = new Clock();
-  const clockB = new Clock();
-  const clockServer = new Clock();
-
+async function makeTriple(): Promise<[MemLocal, Side, Side]> {
   const localA = new MemLocal();
   const localB = new MemLocal();
   const localServer = new MemLocal();
 
-  const remoteA = new LocalRemote(clockA.timestamp.nodeID);
-  const remoteB = new LocalRemote(clockB.timestamp.nodeID);
-  const remoteServer = new LocalRemote(clockServer.timestamp.nodeID);
+  const remoteA = new LocalRemote();
+  const remoteB = new LocalRemote();
+  const remoteServer = new LocalRemote();
 
-  const syncDBA = new SyncDB(clockA, remoteA, localA);
-  const syncDBB = new SyncDB(clockB, remoteB, localB);
-  const syncDBServer = new SyncDB(clockServer, remoteServer, localServer);
+  const syncDBA = await SyncDB.new(remoteA, localA);
+  const syncDBB = await SyncDB.new(remoteB, localB);
+  const syncDBServer = await SyncDB.new(remoteServer, localServer);
 
   remoteA.syncDB = syncDBServer;
+  remoteA.nodeID = sc(syncDBA).timestamp.nodeID;
+
   remoteB.syncDB = syncDBServer;
+  remoteB.nodeID = sc(syncDBB).timestamp.nodeID;
+
+  remoteServer.nodeID = sc(syncDBServer).timestamp.nodeID;
 
   return [
     localServer,
@@ -247,7 +250,7 @@ function makeTriple(): [MemLocal, Side, Side] {
 }
 
 test('Sync Basic', async () => {
-  const [sideA, sideB] = makePair();
+  const [sideA, sideB] = await makePair();
   await sideA.syncDB.send([yodaNameMessage, yodaAge900Message]);
   // @ts-expect-error private member access
   clearTimeout(sideA.syncDB.nextSync);
@@ -286,7 +289,7 @@ test('Sync Basic', async () => {
 });
 
 test('3 way Sync', async () => {
-  const [server, sideA, sideB] = makeTriple();
+  const [server, sideA, sideB] = await makeTriple();
 
   // Side A sends some messages, but doesn't sync yet.
   await sideA.syncDB.send([yodaAge900Message]);

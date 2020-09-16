@@ -2,6 +2,8 @@ import { murmurHashV3 } from './murmurhash';
 import { customAlphabet } from 'nanoid';
 
 const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyz', 16);
+const kLastSync = 'last_sync';
+const kClock = 'clock';
 
 class DuplicateNodeError extends Error {
   type = 'DuplicateNodeError';
@@ -318,21 +320,38 @@ export interface Local {
   // message log for the matching (dataset, row, column).
   queryLatestMessages(messages: Message[]): Promise<(Message | undefined)[]>;
 
-  // Store the last successful sync timestamp.
-  storeLastSync(timestamp: string): Promise<void>;
+  // Set associated metadata as key/value.
+  set(key: string, value: string): Promise<void>;
 
-  // Query the last successful sync timestamp.
-  queryLastSync(): Promise<string | undefined>;
+  // Get Query the last successful sync timestamp.
+  get(key: string): Promise<string | undefined>;
 }
 
 export class SyncDB {
   private nextSync?: ReturnType<typeof setTimeout>;
 
-  constructor(
+  private constructor(
     private clock: Clock,
     private remote: Remote,
     private local: Local,
   ) {}
+
+  // Create a new instance of a SyncDB.
+  public static async new(remote: Remote, local: Local): Promise<SyncDB> {
+    const clockJSON = await local.get(kClock);
+    let clock: Clock;
+    if (clockJSON) {
+      clock = Clock.fromJSON(JSON.parse(clockJSON));
+    } else {
+      clock = new Clock();
+      await local.set(kClock, JSON.stringify(clock));
+    }
+    return new SyncDB(clock, remote, local);
+  }
+
+  private async saveClock(): Promise<void> {
+    await this.local.set(kClock, JSON.stringify(this.clock));
+  }
 
   private async apply(messages: Message[]): Promise<void> {
     // ensure we're always working with sorted messages, ordering is important.
@@ -371,6 +390,7 @@ export class SyncDB {
         this.clock.merkle.insert(Timestamp.fromJSON(messages[index].timestamp));
       }
     });
+    await this.saveClock();
   }
 
   // Recieve data from a Remote. You may find this useful if in addition to sync
@@ -380,6 +400,7 @@ export class SyncDB {
       return;
     }
     messages.forEach((m) => this.clock.recv(Timestamp.fromJSON(m.timestamp)));
+    await this.saveClock();
     await this.apply(messages);
   }
 
@@ -394,10 +415,11 @@ export class SyncDB {
   public async sync(since?: string): Promise<void> {
     // Capture this at the onset to later send() calls don't affect us.
     const lastSync = this.clock.send().toJSON();
+    await this.saveClock();
 
     // either the given since, or the last sync, or zero
     if (!since) {
-      since = await this.local.queryLastSync();
+      since = await this.local.get(kLastSync);
       if (!since) {
         since = new Timestamp(0, 0, '0').toJSON(); // the begining of time
       }
@@ -409,7 +431,7 @@ export class SyncDB {
     });
     await this.recv(syncResponse.messages);
 
-    await this.local.storeLastSync(lastSync);
+    await this.local.set(kLastSync, lastSync);
 
     // if we still have diffferences, we may need another sync.
     const diffTime = syncResponse.merkle.diff(this.clock.merkle);
@@ -423,6 +445,7 @@ export class SyncDB {
   public async send(messages: Omit<Message, 'timestamp'>[]): Promise<void> {
     const withTS = messages as Message[];
     withTS.forEach((m) => (m.timestamp = this.clock.send().toJSON()));
+    await this.saveClock();
     await this.apply(withTS);
     this.scheduleSync();
   }
