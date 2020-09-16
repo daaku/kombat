@@ -5,14 +5,6 @@ const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyz', 16);
 const kLastSync = 'last_sync';
 const kClock = 'clock';
 
-class DuplicateNodeError extends Error {
-  type = 'DuplicateNodeError';
-  constructor(nodeID: string) {
-    super();
-    this.message = `duplicate node identifier: ${nodeID}`;
-  }
-}
-
 class ClockDriftError extends Error {
   type = 'ClockDriftError';
   constructor(context: string) {
@@ -238,11 +230,6 @@ export class Clock {
   recv(ts: Timestamp): void {
     // retrieve the local wall clock time
     const now = Date.now();
-
-    // prevent accidental usage where we recv our own timestamp.
-    if (ts.nodeID === this.timestamp.nodeID) {
-      throw new DuplicateNodeError(ts.nodeID);
-    }
 
     // TODO: again, why is clock drift an issue? why can't we accept this?
     if (ts.millis - now > this.maxDriftMS) {
