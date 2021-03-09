@@ -1,4 +1,4 @@
-import { Timestamp, Merkle, Clock } from '..';
+import { Clock, Merkle, Timestamp } from '..';
 
 const nodeID = 'e35dd11177e4cc2c';
 
