@@ -152,7 +152,8 @@ export class Merkle {
     let node2: Merkle = other;
     let k = '';
 
-    while (1) {
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
       const keyset = new Set([...node1.childKeys, ...node2.childKeys]);
       const keys = [...keyset.values()];
       keys.sort();

@@ -36,8 +36,10 @@ export function murmurHashV3(key: string, seed = 0): number {
   switch (remainder) {
     case 3:
       k1 ^= (key.charCodeAt(i + 2) & 0xff) << 16;
+      break;
     case 2:
       k1 ^= (key.charCodeAt(i + 1) & 0xff) << 8;
+      break;
     case 1:
       k1 ^= key.charCodeAt(i) & 0xff;
 
@@ -49,6 +51,7 @@ export function murmurHashV3(key: string, seed = 0): number {
         ((k1 & 0xffff) * c2 + ((((k1 >>> 16) * c2) & 0xffff) << 16)) &
         0xffffffff;
       h1 ^= k1;
+      break;
   }
 
   h1 ^= key.length;
