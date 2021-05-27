@@ -1,7 +1,11 @@
 /* eslint-disable no-fallthrough */
 // Author: Gary Court <gary.court@gmail.com>
 // https://github.com/garycourt/murmurhash-js
-export function murmurHashV3(key: string, seed = 0): number {
+export function murmurHashV3(key: string | Uint8Array, seed = 0): number {
+  if (typeof key === 'string') {
+    key = new TextEncoder().encode(key);
+  }
+
   let h1, h1b, k1, i;
 
   const c1 = 0xcc9e2d51;
@@ -13,10 +17,10 @@ export function murmurHashV3(key: string, seed = 0): number {
 
   while (i < bytes) {
     k1 =
-      (key.charCodeAt(i) & 0xff) |
-      ((key.charCodeAt(++i) & 0xff) << 8) |
-      ((key.charCodeAt(++i) & 0xff) << 16) |
-      ((key.charCodeAt(++i) & 0xff) << 24);
+      (key[i] & 0xff) |
+      ((key[++i] & 0xff) << 8) |
+      ((key[++i] & 0xff) << 16) |
+      ((key[++i] & 0xff) << 24);
     ++i;
 
     k1 =
@@ -36,11 +40,11 @@ export function murmurHashV3(key: string, seed = 0): number {
 
   switch (remainder) {
     case 3:
-      k1 ^= (key.charCodeAt(i + 2) & 0xff) << 16;
+      k1 ^= (key[i + 2] & 0xff) << 16;
     case 2:
-      k1 ^= (key.charCodeAt(i + 1) & 0xff) << 8;
+      k1 ^= (key[i + 1] & 0xff) << 8;
     case 1:
-      k1 ^= key.charCodeAt(i) & 0xff;
+      k1 ^= key[i] & 0xff;
 
       k1 =
         ((k1 & 0xffff) * c1 + ((((k1 >>> 16) * c1) & 0xffff) << 16)) &

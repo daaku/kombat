@@ -18,8 +18,7 @@ test.each([
   ['abc', 0, 0xb3dd93fa],
   ['abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq', 0, 0xee925b90],
   ['The quick brown fox jumps over the lazy dog', 0x9747b28c, 0x2fa826cd],
-  //TODO: need to use TextEncoder
-  //['ππππππππ', 0x9747b28c, 0xd58063c1],
+  ['ππππππππ', 0x9747b28c, 0xd58063c1],
 ])('murmurHashV3(%s, %d) => %d', (key, seed, hash) => {
   expect(murmurHashV3(key, seed)).toBe(hash);
 });
