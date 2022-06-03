@@ -29,7 +29,7 @@
   "license": "MIT",
   "devDependencies": {
     "@daaku/eslint-config": "^4.2.0",
-    "@types/jest": "^27.4.0",
+    "@types/jest": "^28.1.0",
     "esbuild": "^0.14.11",
     "esbuild-jest": "^0.5.0",
     "eslint": "^8.7.0",
