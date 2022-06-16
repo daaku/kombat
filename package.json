@@ -1,7 +1,7 @@
 {
   "name": "@daaku/kombat",
   "author": "Naitik Shah <n@daaku.org>",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "description": "Infrastructure for CRDT powered applications.",
   "repository": "git@github.com:daaku/kombat",
   "license": "MIT",
