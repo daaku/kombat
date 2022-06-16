@@ -1,4 +1,5 @@
-/.eslintrc.js
 /.github
+/lib/spec
+/spec
 /src
 /tsconfig.json

@@ -1,6 +1,6 @@
 import { customAlphabet } from 'nanoid';
 
-import { murmurHashV3 } from './murmurhash';
+import { murmurHashV3 } from './murmurhash.js';
 
 const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyz', 16);
 const kLastSync = 'last_sync';
