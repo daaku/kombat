@@ -41,6 +41,6 @@
     "typescript": "^5.0.2"
   },
   "dependencies": {
-    "nanoid": "^4.0.0"
+    "nanoid": "^5.0.1"
   }
 }
