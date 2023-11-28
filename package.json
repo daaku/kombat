@@ -5,7 +5,6 @@
   "description": "Infrastructure for CRDT powered applications.",
   "repository": "git@github.com:daaku/kombat",
   "license": "MIT",
-  "prettier": "prettier-config-daaku",
   "type": "module",
   "exports": {
     ".": {
@@ -13,17 +12,16 @@
       "types": "./lib/src/index.d.ts"
     }
   },
-  "eslintConfig": {
-    "extends": "@daaku"
+  "prettier": {
+    "arrowParens": "avoid",
+    "singleQuote": true,
+    "trailingComma": "all"
   },
   "scripts": {
-    "check:types": "tsc --noEmit",
-    "check:lint": "eslint --fix --ignore-pattern lib .",
-    "check": "run-p 'check:*' 'test'",
-    "build:js": "tsc",
-    "build": "run-p check:lint test build:*",
-    "test": "node --loader @esbuild-kit/esm-loader ./node_modules/.bin/jasmine",
-    "deploy": "npm run build && npm publish --access=public"
+    "build": "tsc",
+    "test": "node --import tsx/esm ./node_modules/.bin/jasmine",
+    "deploy": "npm run test && npm publish --access=public",
+    "prepare": "npm run build"
   },
   "keywords": [
     "crdt",
@@ -31,13 +29,9 @@
     "offline"
   ],
   "devDependencies": {
-    "@daaku/eslint-config": "^4.2.0",
-    "@esbuild-kit/esm-loader": "^2.2.0",
     "@types/jasmine": "^5.1.0",
-    "eslint": "^8.7.0",
     "jasmine": "^5.0.0",
-    "npm-run-all": "^4.1.5",
-    "prettier-config-daaku": "^1.0.0",
+    "tsx": "^4.6.0",
     "typescript": "^5.0.2"
   },
   "dependencies": {

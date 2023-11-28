@@ -39,8 +39,10 @@ export function murmurHashV3(key: string | Uint8Array, seed = 0): number {
   k1 = 0;
 
   switch (remainder) {
+    // @ts-ignore we want fallthru
     case 3:
       k1 ^= (key[i + 2] & 0xff) << 16;
+    // @ts-ignore we want fallthru
     case 2:
       k1 ^= (key[i + 1] & 0xff) << 8;
     case 1:
