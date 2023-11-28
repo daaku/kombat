@@ -12,6 +12,6 @@
     "sourceMap": true,
     "strict": true,
     "strictBindCallApply": true,
-    "target": "es2020"
+    "target": "es2022"
   }
 }
