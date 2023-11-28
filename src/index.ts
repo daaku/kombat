@@ -310,6 +310,7 @@ export interface Local {
 
 export class SyncDB {
   private nextSync?: ReturnType<typeof setTimeout>
+  readonly #pending: Set<Promise<void>> = new Set()
 
   private constructor(
     private clock: Clock,
@@ -389,7 +390,11 @@ export class SyncDB {
     if (this.nextSync) {
       clearTimeout(this.nextSync)
     }
-    this.nextSync = setTimeout(() => this.sync(), timeoutMS)
+    this.nextSync = setTimeout(() => {
+      const r = this.sync()
+      this.#pending.add(r)
+      r.finally(() => this.#pending.delete(r))
+    }, timeoutMS)
   }
 
   // Sync data to-and-from the Remote.
@@ -429,5 +434,10 @@ export class SyncDB {
     await this.saveClock()
     await this.apply(withTS)
     this.scheduleSync()
+  }
+
+  // Wait for scheduled sync to settle.
+  public async settle(): Promise<void> {
+    await Promise.allSettled(this.#pending.values())
   }
 }
