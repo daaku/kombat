@@ -20,7 +20,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "node --import tsx/esm ./node_modules/.bin/jasmine",
+    "test": "NODE_OPTIONS='--import tsx/esm' jasmine",
     "deploy": "npm run test && npm publish --access=public",
     "prepare": "npm run build"
   },
