@@ -1,7 +1,7 @@
-import { murmurHashV3 } from '../src/murmurhash.js';
+import { murmurHashV3 } from '../src/murmurhash.js'
 
 describe('murmur', () => {
-  (
+  ;(
     [
       ['', 0, 0],
       ['', 1, 0x514e28b7],
@@ -28,7 +28,7 @@ describe('murmur', () => {
     ] as const
   ).forEach(([key, seed, hash]) => {
     it(`murmurHashV3(${key}, ${seed}) => ${hash}`, () => {
-      expect(murmurHashV3(key, seed)).toBe(hash);
-    });
-  });
-});
+      expect(murmurHashV3(key, seed)).toBe(hash)
+    })
+  })
+})
