@@ -390,7 +390,7 @@ export class SyncDB {
   }
 
   private scheduleSync(timeoutMS = 50) {
-    let p: Promise<void>
+    let p: Promise<void> | undefined = undefined
     p = this.nextSync = (async () => {
       await after(timeoutMS)
       // if while waiting nextSync was changed, and no longer this promise, it
