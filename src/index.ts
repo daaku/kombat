@@ -308,9 +308,12 @@ export interface Local {
   get(key: string): Promise<string | undefined>
 }
 
+const after = (timeout: number) =>
+  new Promise(resolve => setTimeout(resolve, timeout))
+
 export class SyncDB {
-  private nextSync?: ReturnType<typeof setTimeout>
-  readonly #pending: Set<Promise<void>> = new Set()
+  private nextSync?: Promise<void>
+  #pending = new Set()
 
   private constructor(
     private clock: Clock,
@@ -387,14 +390,19 @@ export class SyncDB {
   }
 
   private scheduleSync(timeoutMS = 50) {
-    if (this.nextSync) {
-      clearTimeout(this.nextSync)
-    }
-    this.nextSync = setTimeout(() => {
-      const r = this.sync()
-      this.#pending.add(r)
-      r.finally(() => this.#pending.delete(r))
-    }, timeoutMS)
+    let p: Promise<void>
+    p = this.nextSync = (async () => {
+      await after(timeoutMS)
+      // if while waiting nextSync was changed, and no longer this promise, it
+      // means another one was scheduled after us. we'll let that one do the
+      // work instead of us.
+      if (p !== this.nextSync) {
+        return
+      }
+      await this.sync()
+    })()
+    p.finally(() => this.#pending.delete(p))
+    this.#pending.add(p)
   }
 
   // Sync data to-and-from the Remote.
@@ -416,7 +424,6 @@ export class SyncDB {
       messages: toSend,
     })
     await this.recv(syncResponse.messages)
-
     await this.local.set(kLastSync, lastSync)
 
     // if we still have diffferences, we may need another sync.
@@ -438,6 +445,15 @@ export class SyncDB {
 
   // Wait for scheduled sync to settle.
   public async settle(): Promise<void> {
-    await Promise.allSettled(this.#pending.values())
+    let last = this.nextSync
+    while (true) {
+      await Promise.allSettled(this.#pending.values())
+      // if no new sync was scheduled, or was scheduled and finished, we're done
+      if (last === this.nextSync) {
+        return
+      }
+      // else we wait again if anything is pending
+      last = this.nextSync
+    }
   }
 }

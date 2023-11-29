@@ -258,7 +258,7 @@ it('Sync Basic', async () => {
   const [sideA, sideB] = await makePair()
   await sideA.syncDB.send([yodaNameMessage(), yodaAge900Message()])
   // @ts-expect-error private member access
-  clearTimeout(sideA.syncDB.nextSync)
+  sideA.syncDB.nextSync = null
   await sideA.syncDB.sync()
   expect(sideA.local.db).toEqual({
     people: {
@@ -276,7 +276,7 @@ it('Sync Basic', async () => {
 
   await sideB.syncDB.send([yodaAge950Message()])
   // @ts-expect-error private member access
-  clearTimeout(sideB.syncDB.nextSync)
+  sideB.syncDB.nextSync = null
   await sideA.syncDB.sync()
   expect(sideA.local.db).toEqual({
     people: {
@@ -299,12 +299,12 @@ it('3 way Sync', async () => {
   // Side A sends some messages, but doesn't sync yet.
   await sideA.syncDB.send([yodaAge900Message()])
   // @ts-expect-error private member access
-  clearTimeout(sideA.syncDB.nextSync)
+  sideA.syncDB.nextSync = null
 
   // Side B sends some messages, and syncs.
   await sideB.syncDB.send([yodaNameMessage(), yodaAge950Message()])
   // @ts-expect-error private member access
-  clearTimeout(sideB.syncDB.nextSync)
+  sideB.syncDB.nextSync = null
   await sideB.syncDB.sync()
   expect(sideB.local.db).toEqual({
     people: {
@@ -351,4 +351,49 @@ it('3 way Sync', async () => {
   expect(sideB.remote.history.length).toBe(2)
   expect(sideB.remote.history[1].in.messages.length).toBe(0)
   expect(sideB.remote.history[1].out.messages.length).toBe(1)
+})
+
+const after = (timeout: number) =>
+  new Promise(resolve => setTimeout(resolve, timeout))
+
+it('settles with one scheduleSync', async () => {
+  const [sideA, _] = await makePair()
+  let sync = 0
+  sideA.syncDB.sync = async () => {
+    await after(10) // stiumation to prevent being immediate
+    sync++
+  }
+  await sideA.syncDB.send([yodaAge900Message()])
+  await sideA.syncDB.settle()
+  expect(sync).toBe(1)
+})
+
+it('settles with two scheduleSync', async () => {
+  const [sideA, _] = await makePair()
+  let sync = 0
+  sideA.syncDB.sync = async () => {
+    await after(10) // stiumation to prevent being immediate
+    sync++
+  }
+  await sideA.syncDB.send([yodaAge900Message()])
+  await sideA.syncDB.send([yodaAge950Message()])
+  await sideA.syncDB.settle()
+  expect(sync).toBe(1)
+})
+
+it('settles with scheduleSync during a running scheduleSync', async () => {
+  const [sideA, _] = await makePair()
+  let sync = 0
+  sideA.syncDB.sync = async () => {
+    await after(10) // stiumation to prevent being immediate
+    sideA.syncDB.sync = async () => {
+      await after(10) // stiumation to prevent being immediate
+      sync++
+    }
+    sync++
+    await sideA.syncDB.send([yodaAge950Message()])
+  }
+  await sideA.syncDB.send([yodaAge900Message()])
+  await sideA.syncDB.settle()
+  expect(sync).toBe(2)
 })
