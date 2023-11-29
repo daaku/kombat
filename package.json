@@ -19,10 +19,9 @@
     "trailingComma": "all"
   },
   "scripts": {
-    "build": "tsc",
     "test": "NODE_OPTIONS='--import tsx/esm' jasmine",
     "deploy": "npm run test && npm publish --access=public",
-    "prepare": "npm run build"
+    "prepare": "tsc"
   },
   "keywords": [
     "crdt",
