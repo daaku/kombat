@@ -1,4 +1,5 @@
 import { customAlphabet } from 'nanoid'
+import { Mutex } from 'async-mutex'
 
 import { murmurHashV3 } from './murmurhash.js'
 
@@ -314,6 +315,7 @@ const after = (timeout: number) =>
 export class SyncDB {
   private nextSync?: Promise<void>
   #pending = new Set()
+  #syncMutex = new Mutex()
 
   private constructor(
     private clock: Clock,
@@ -407,25 +409,34 @@ export class SyncDB {
 
   // Sync data to-and-from the Remote.
   public async sync(since?: string): Promise<void> {
-    // Capture this at the onset to later send() calls don't affect us.
-    const lastSync = this.clock.send().toJSON()
-    await this.saveClock()
+    // we use a mutex to prevent running multiple sync calls concurrently
+    // because otherwise we may try to write the same messages in two separate
+    // sync requests. one may be pending before we update the local clock, and
+    // so the queryMessages below would include messages from that pending
+    // request. a backend may choose to be idempotent and ignore the exact same
+    // messages, which it should if possible. but for example with the
+    // kombat-firestore backend this is not possible.
+    const syncResponse = await this.#syncMutex.runExclusive(async () => {
+      // Capture this at the onset to later send() calls don't affect us.
+      const lastSync = this.clock.send().toJSON()
+      await this.saveClock()
 
-    // either the given since, or the last sync, or zero
-    if (!since) {
-      since = await this.local.get(kLastSync)
+      // either the given since, or the last sync, or zero
       if (!since) {
-        since = new Timestamp(0, 0, '0').toJSON() // the begining of time
+        since = await this.local.get(kLastSync)
+        if (!since) {
+          since = new Timestamp(0, 0, '0').toJSON() // the begining of time
+        }
       }
-    }
-    const toSend = await this.local.queryMessages(since)
-    const syncResponse = await this.remote.sync({
-      merkle: this.clock.merkle.clone(),
-      messages: toSend,
+      const toSend = await this.local.queryMessages(since)
+      const syncResponse = await this.remote.sync({
+        merkle: this.clock.merkle.clone(),
+        messages: toSend,
+      })
+      await this.recv(syncResponse.messages)
+      await this.local.set(kLastSync, lastSync)
+      return syncResponse
     })
-    await this.recv(syncResponse.messages)
-    await this.local.set(kLastSync, lastSync)
-
     // if we still have diffferences, we may need another sync.
     const diffTime = syncResponse.merkle.diff(this.clock.merkle)
     if (diffTime) {

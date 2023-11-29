@@ -35,6 +35,7 @@
     "typescript": "^5.0.2"
   },
   "dependencies": {
+    "async-mutex": "^0.4.0",
     "nanoid": "^5.0.1"
   }
 }
