@@ -284,7 +284,8 @@ export interface Remote {
 
 // Local is the set of functions the local side of the Sync should implement.
 export interface Local {
-  // These messages should be applied to the DB.
+  // These messages should be applied to the DB. The messages are sorted with
+  // oldest first.
   applyChanges(messages: Message[]): Promise<void>
 
   // Store the messages into the message log. This may be different than the set
@@ -295,7 +296,7 @@ export interface Local {
   storeMessages(messages: Message[]): Promise<boolean[]>
 
   // Query messages from the message log where the timestamp is greater than or
-  // equal to the given timestamp.
+  // equal to the given timestamp. Messages should be sorted with oldest first.
   queryMessages(since: string): Promise<Message[]>
 
   // For each message, return the corresponding latest message we have in the
@@ -344,9 +345,9 @@ export class SyncDB {
     // ensure we're always working with sorted messages, ordering is important.
     messages.sort((m1, m2) => {
       if (m1.timestamp < m2.timestamp) {
-        return 1
-      } else if (m1.timestamp > m2.timestamp) {
         return -1
+      } else if (m1.timestamp > m2.timestamp) {
+        return 1
       }
       return 0
     })

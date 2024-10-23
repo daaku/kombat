@@ -14,9 +14,9 @@ const nodeID = 'e35dd11177e4cc2c'
 function sort(messages: Message[]) {
   messages.sort((m1, m2) => {
     if (m1.timestamp < m2.timestamp) {
-      return 1
-    } else if (m1.timestamp > m2.timestamp) {
       return -1
+    } else if (m1.timestamp > m2.timestamp) {
+      return 1
     }
     return 0
   })
@@ -64,18 +64,18 @@ class MemLocal implements Local {
 
   async queryMessages(since: string): Promise<Message[]> {
     for (let i = 0; i < this.messages.length; i++) {
-      if (this.messages[i].timestamp < since) {
-        return this.messages.slice(0, i)
+      if (this.messages[i].timestamp >= since) {
+        return this.messages.slice(i)
       }
     }
-    return [...this.messages]
+    return []
   }
 
   async queryLatestMessages(
     messages: Message[],
   ): Promise<(Message | undefined)[]> {
     return messages.map(msg =>
-      this.messages.find(
+      this.messages.findLast(
         existing =>
           msg.dataset === existing.dataset &&
           msg.row === existing.row &&
@@ -169,7 +169,7 @@ test('MemLocal.storeMessages', async () => {
     yodaAge900Message(),
   ])
   expect(results2).toEqual([false, false])
-  expect(local.messages).toEqual([yodaAge900Message(), yodaNameMessage()])
+  expect(local.messages).toEqual([yodaNameMessage(), yodaAge900Message()])
 })
 
 test('MemLocal.queryMessages', async () => {
@@ -180,10 +180,14 @@ test('MemLocal.queryMessages', async () => {
     yodaNameMessage(),
   ]
   await local.storeMessages(originalIn)
-  expect(await local.queryMessages('')).toEqual(originalIn)
-  expect(await local.queryMessages(yodaAge900Message().timestamp)).toEqual([
-    yodaAge950Message(),
+  expect(await local.queryMessages('')).toEqual([
+    yodaNameMessage(),
     yodaAge900Message(),
+    yodaAge950Message(),
+  ])
+  expect(await local.queryMessages(yodaAge900Message().timestamp)).toEqual([
+    yodaAge900Message(),
+    yodaAge950Message(),
   ])
 })
 
