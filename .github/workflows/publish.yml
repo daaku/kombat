@@ -13,6 +13,8 @@ jobs:
     steps:
       - uses: oven-sh/setup-bun@v2
       - uses: actions/checkout@v4
+      - name: setup npmrc
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NODE_AUTH_TOKEN }}" > ~/.npmrc
       - run: bun install
       - name: Bump Version
         run: |
@@ -20,7 +22,4 @@ jobs:
           git config --global user.email 'daaku@users.noreply.github.com'
           npm version ${{ github.event.inputs.version }}
           git push && git push --tags
-      - name: Publish
-        run: bun run deploy
-        env:
-          BUN_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+      - run: bun run deploy
