@@ -19,14 +19,10 @@
     "trailingComma": "all"
   },
   "scripts": {
-    "deploy": "bun test && bun publish --access=public",
+    "deploy": "bun test && npm publish --access=public",
     "prepare": "tsc"
   },
-  "keywords": [
-    "crdt",
-    "kombat",
-    "offline"
-  ],
+  "keywords": ["crdt", "kombat", "offline"],
   "devDependencies": {
     "@types/bun": "^1.0.8",
     "typescript": "^5.0.2"

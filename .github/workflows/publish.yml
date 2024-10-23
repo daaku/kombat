@@ -11,10 +11,12 @@ jobs:
     name: Publish
     runs-on: ubuntu-latest
     steps:
+      - with:
+          uses: actions/setup-node@v4
+          node-version: current
+          registry-url: 'https://registry.npmjs.org'
       - uses: oven-sh/setup-bun@v2
       - uses: actions/checkout@v4
-      - name: setup npmrc
-        run: echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' > ~/.npmrc
       - run: bun install
       - name: Bump Version
         run: |
@@ -22,6 +24,6 @@ jobs:
           git config --global user.email 'daaku@users.noreply.github.com'
           npm version ${{ github.event.inputs.version }}
           git push && git push --tags
-      - run: bun run deploy
+      - run: npm run deploy
         env:
-          NPM_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
