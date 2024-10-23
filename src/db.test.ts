@@ -1,3 +1,4 @@
+import { expect, test } from 'bun:test'
 import {
   Clock,
   Local,
@@ -6,7 +7,7 @@ import {
   SyncDB,
   SyncRequest,
   Timestamp,
-} from '../src/index.js'
+} from './index.js'
 
 const nodeID = 'e35dd11177e4cc2c'
 
@@ -142,7 +143,7 @@ const yodaAge950Message = () => ({
   value: 950,
 })
 
-it('MemLocal.applyChanges', async () => {
+test('MemLocal.applyChanges', async () => {
   const local = new MemLocal()
   await local.applyChanges([yodaNameMessage(), yodaAge900Message()])
   expect(local.db).toEqual({
@@ -156,7 +157,7 @@ it('MemLocal.applyChanges', async () => {
   })
 })
 
-it('MemLocal.storeMessages', async () => {
+test('MemLocal.storeMessages', async () => {
   const local = new MemLocal()
   const results1 = await local.storeMessages([
     yodaNameMessage(),
@@ -171,7 +172,7 @@ it('MemLocal.storeMessages', async () => {
   expect(local.messages).toEqual([yodaAge900Message(), yodaNameMessage()])
 })
 
-it('MemLocal.queryMessages', async () => {
+test('MemLocal.queryMessages', async () => {
   const local = new MemLocal()
   const originalIn = [
     yodaAge950Message(),
@@ -186,7 +187,7 @@ it('MemLocal.queryMessages', async () => {
   ])
 })
 
-it('MemLocal.queryLatestMessages', async () => {
+test('MemLocal.queryLatestMessages', async () => {
   const local = new MemLocal()
   const originalIn = [yodaNameMessage(), yodaAge900Message()]
   await local.storeMessages(originalIn)
@@ -254,7 +255,7 @@ async function makeTriple(): Promise<[MemLocal, Side, Side]> {
   ]
 }
 
-it('Sync Basic', async () => {
+test('Sync Basic', async () => {
   const [sideA, sideB] = await makePair()
   await sideA.syncDB.send([yodaNameMessage(), yodaAge900Message()])
   // @ts-expect-error private member access
@@ -293,7 +294,7 @@ it('Sync Basic', async () => {
   expect(sideA.remote.history[1].out.messages.length).toBe(1)
 })
 
-it('3 way Sync', async () => {
+test('3 way Sync', async () => {
   const [server, sideA, sideB] = await makeTriple()
 
   // Side A sends some messages, but doesn't sync yet.
@@ -356,7 +357,7 @@ it('3 way Sync', async () => {
 const after = (timeout: number) =>
   new Promise(resolve => setTimeout(resolve, timeout))
 
-it('settles with one scheduleSync', async () => {
+test('settles with one scheduleSync', async () => {
   const [sideA, _] = await makePair()
   let sync = 0
   sideA.syncDB.sync = async () => {
@@ -368,7 +369,7 @@ it('settles with one scheduleSync', async () => {
   expect(sync).toBe(1)
 })
 
-it('settles with two scheduleSync', async () => {
+test('settles with two scheduleSync', async () => {
   const [sideA, _] = await makePair()
   let sync = 0
   sideA.syncDB.sync = async () => {
@@ -381,7 +382,7 @@ it('settles with two scheduleSync', async () => {
   expect(sync).toBe(1)
 })
 
-it('settles with scheduleSync during a running scheduleSync', async () => {
+test('settles with scheduleSync during a running scheduleSync', async () => {
   const [sideA, _] = await makePair()
   let sync = 0
   sideA.syncDB.sync = async () => {

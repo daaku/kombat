@@ -19,19 +19,12 @@
     "trailingComma": "all"
   },
   "scripts": {
-    "test": "NODE_OPTIONS='--import tsx/esm' jasmine",
-    "deploy": "npm run test && npm publish --access=public",
+    "deploy": "bun test && bun publish --access=public",
     "prepare": "tsc"
   },
-  "keywords": [
-    "crdt",
-    "kombat",
-    "offline"
-  ],
+  "keywords": ["crdt", "kombat", "offline"],
   "devDependencies": {
-    "@types/jasmine": "^5.1.0",
-    "jasmine": "^5.0.0",
-    "tsx": "^4.6.0",
+    "@types/bun": "^1.0.8",
     "typescript": "^5.0.2"
   },
   "dependencies": {

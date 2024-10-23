@@ -13,5 +13,7 @@
     "strict": true,
     "strictBindCallApply": true,
     "target": "es2022"
-  }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["**/*.test.*"]
 }

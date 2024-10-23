@@ -1,5 +1,3 @@
 /.github
-/dist/spec
-/spec
 /src
 /tsconfig.json

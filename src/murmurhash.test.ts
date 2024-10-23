@@ -1,4 +1,5 @@
-import { murmurHashV3 } from '../src/murmurhash.js'
+import { murmurHashV3 } from './murmurhash.js'
+import { expect, test, describe } from 'bun:test'
 
 describe('murmur', () => {
   ;(
@@ -27,7 +28,7 @@ describe('murmur', () => {
       ['ππππππππ', 0x9747b28c, 0xd58063c1],
     ] as const
   ).forEach(([key, seed, hash]) => {
-    it(`murmurHashV3(${key}, ${seed}) => ${hash}`, () => {
+    test(`murmurHashV3(${key}, ${seed}) => ${hash}`, () => {
       expect(murmurHashV3(key, seed)).toBe(hash)
     })
   })
