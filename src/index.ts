@@ -270,7 +270,7 @@ export interface Message {
   dataset: string
   row: string
   column: string
-  value: unknown
+  value?: unknown
 }
 
 export interface SyncRequest {
