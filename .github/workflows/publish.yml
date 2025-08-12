@@ -16,7 +16,7 @@ jobs:
           node-version: 22.10.0
           registry-url: 'https://registry.npmjs.org'
       - uses: oven-sh/setup-bun@v2
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: bun install
       - name: Bump Version
         run: |
