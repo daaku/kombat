@@ -1,5 +1,5 @@
-import { customAlphabet } from 'nanoid'
 import { Mutex } from 'async-mutex'
+import { customAlphabet } from 'nanoid'
 
 import { murmurHashV3 } from './murmurhash.js'
 
@@ -205,8 +205,9 @@ export class Clock {
     // time never goes backwards, even if the wall clock does
     const newMillis = Math.max(this.timestamp.millis, now)
     // if time has not advanced, the counter gets advanced
-    const newCounter =
-      this.timestamp.millis === newMillis ? this.timestamp.counter + 1 : 0
+    const newCounter = this.timestamp.millis === newMillis
+      ? this.timestamp.counter + 1
+      : 0
 
     // TODO: what do we do here? we prefer not to abort. should we somehow
     // indicate a full sync is required? what is the result of just ignoring
@@ -343,14 +344,7 @@ export class SyncDB {
 
   private async apply(messages: Message[]): Promise<void> {
     // ensure we're always working with sorted messages, ordering is important.
-    messages.sort((m1, m2) => {
-      if (m1.timestamp < m2.timestamp) {
-        return -1
-      } else if (m1.timestamp > m2.timestamp) {
-        return 1
-      }
-      return 0
-    })
+    messages.sort((m1, m2) => m1.timestamp.localeCompare(m2.timestamp))
 
     const latestMessages = await this.local.queryLatestMessages(messages)
     if (latestMessages.length !== messages.length) {
