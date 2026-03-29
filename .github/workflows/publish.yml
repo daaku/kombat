@@ -6,6 +6,9 @@ on:
         description: 'Type of version bump'
         required: true
         default: 'minor'
+permissions:
+  id-token: write # Required for OIDC
+  contents: write
 jobs:
   publish:
     name: Publish
@@ -13,17 +16,14 @@ jobs:
     steps:
       - uses: actions/setup-node@v6
         with:
-          node-version: 22.10.0
+          node-version: current
           registry-url: 'https://registry.npmjs.org'
-      - uses: oven-sh/setup-bun@v2
       - uses: actions/checkout@v6
-      - run: bun install
+      - run: npm install
       - name: Bump Version
         run: |
           git config --global user.name 'Naitik Shah'
           git config --global user.email 'daaku@users.noreply.github.com'
           npm version ${{ github.event.inputs.version }}
           git push && git push --tags
-      - run: npm run deploy
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+      - run: npm publish

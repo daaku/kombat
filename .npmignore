@@ -1,3 +1,4 @@
 /.github
 /bun.lockb
 /tsconfig.json
+/dist/*.test.*

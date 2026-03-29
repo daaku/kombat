@@ -19,7 +19,6 @@
     "trailingComma": "all"
   },
   "scripts": {
-    "deploy": "bun test && npm publish --access=public",
     "prepare": "tsc"
   },
   "keywords": [
