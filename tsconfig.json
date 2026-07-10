@@ -4,13 +4,11 @@
     "noFallthroughCasesInSwitch": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "rootDir": "src",
     "outDir": "dist",
+    "rewriteRelativeImportExtensions": true,
+    "rootDir": "src",
     "skipLibCheck": true,
     "sourceMap": true,
-    "strict": true,
-    "strictBindCallApply": true,
-    "target": "esnext",
-    "types": ["bun"]
+    "types": ["node"]
   }
 }

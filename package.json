@@ -27,7 +27,7 @@
     "offline"
   ],
   "devDependencies": {
-    "@types/bun": "^1.3.11",
+    "@types/node": "^26.1.1",
     "typescript": "^6.0.2"
   },
   "dependencies": {

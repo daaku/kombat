@@ -1,5 +1,6 @@
-import { murmurHashV3 } from './murmurhash.js'
-import { expect, test, describe } from 'bun:test'
+import { strictEqual } from 'node:assert/strict'
+import { describe, test } from 'node:test'
+import { murmurHashV3 } from './murmurhash.ts'
 
 describe('murmur', () => {
   ;(
@@ -29,7 +30,7 @@ describe('murmur', () => {
     ] as const
   ).forEach(([key, seed, hash]) => {
     test(`murmurHashV3(${key}, ${seed}) => ${hash}`, () => {
-      expect(murmurHashV3(key, seed)).toBe(hash)
+      strictEqual(murmurHashV3(key, seed), hash)
     })
   })
 })

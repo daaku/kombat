@@ -1,7 +1,7 @@
 import { Mutex } from 'async-mutex'
 import { customAlphabet } from 'nanoid'
 
-import { murmurHashV3 } from './murmurhash.js'
+import { murmurHashV3 } from './murmurhash.ts'
 
 const nanoid = customAlphabet('1234567890abcdefghijklmnopqrstuvwxyz', 16)
 const kLastSync = 'last_sync'
@@ -33,11 +33,18 @@ class InvalidTimestampError extends Error {
 
 // Timestamp for Hybrid Logical Clocks.
 export class Timestamp {
+  public readonly millis: number
+  public readonly counter: number
+  public readonly nodeID: string
   constructor(
-    public readonly millis: number,
-    public readonly counter: number,
-    public readonly nodeID: string,
-  ) {}
+    millis: number,
+    counter: number,
+    nodeID: string,
+  ) {
+    this.millis = millis
+    this.counter = counter
+    this.nodeID = nodeID
+  }
 
   // Serialize this Timestamp to a string. The strings are lexically sortable.
   toJSON(): string {
@@ -92,10 +99,16 @@ interface MerkleChildren {
 // within the timespan of a minute. It does not affect accuracy, and the benefit
 // is that it reduces the size of the tree.
 export class Merkle {
+  private hash: number
+  private children: MerkleChildren
+
   constructor(
-    private hash: number = 0,
-    private children: MerkleChildren = {},
-  ) {}
+    hash: number = 0,
+    children: MerkleChildren = {},
+  ) {
+    this.hash = hash
+    this.children = children
+  }
 
   // eslint-disable-next-line
   public static fromJSON(data: any): Merkle {
@@ -315,15 +328,22 @@ const after = (timeout: number) =>
   new Promise(resolve => setTimeout(resolve, timeout))
 
 export class SyncDB {
+  private clock: Clock
+  private remote: Remote
+  private local: Local
   private nextSync?: Promise<void>
   #pending = new Set()
   #syncMutex = new Mutex()
 
   private constructor(
-    private clock: Clock,
-    private remote: Remote,
-    private local: Local,
-  ) {}
+    clock: Clock,
+    remote: Remote,
+    local: Local,
+  ) {
+    this.clock = clock
+    this.remote = remote
+    this.local = local
+  }
 
   // Create a new instance of a SyncDB.
   public static async new(remote: Remote, local: Local): Promise<SyncDB> {

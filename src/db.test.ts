@@ -1,13 +1,7 @@
-import { expect, test } from 'bun:test'
-import {
-  Clock,
-  Local,
-  Message,
-  Remote,
-  SyncDB,
-  SyncRequest,
-  Timestamp,
-} from './index.js'
+import { deepEqual, strictEqual } from 'node:assert/strict'
+import { test } from 'node:test'
+import { Clock, SyncDB, Timestamp } from './index.ts'
+import type { Local, Message, Remote, SyncRequest } from './index.ts'
 
 const nodeID = 'e35dd11177e4cc2c'
 
@@ -77,10 +71,10 @@ class MemLocal implements Local {
     return messages.map(msg =>
       this.messages.findLast(
         existing =>
-          msg.dataset === existing.dataset &&
-          msg.row === existing.row &&
-          msg.column === existing.column,
-      ),
+          msg.dataset === existing.dataset
+          && msg.row === existing.row
+          && msg.column === existing.column,
+      )
     )
   }
 
@@ -146,7 +140,7 @@ const yodaAge950Message = () => ({
 test('MemLocal.applyChanges', async () => {
   const local = new MemLocal()
   await local.applyChanges([yodaNameMessage(), yodaAge900Message()])
-  expect(local.db).toEqual({
+  deepEqual(local.db, {
     people: {
       '123': {
         id: '123',
@@ -163,13 +157,13 @@ test('MemLocal.storeMessages', async () => {
     yodaNameMessage(),
     yodaAge900Message(),
   ])
-  expect(results1).toEqual([true, true])
+  deepEqual(results1, [true, true])
   const results2 = await local.storeMessages([
     yodaNameMessage(),
     yodaAge900Message(),
   ])
-  expect(results2).toEqual([false, false])
-  expect(local.messages).toEqual([yodaNameMessage(), yodaAge900Message()])
+  deepEqual(results2, [false, false])
+  deepEqual(local.messages, [yodaNameMessage(), yodaAge900Message()])
 })
 
 test('MemLocal.queryMessages', async () => {
@@ -180,12 +174,12 @@ test('MemLocal.queryMessages', async () => {
     yodaNameMessage(),
   ]
   await local.storeMessages(originalIn)
-  expect(await local.queryMessages('')).toEqual([
+  deepEqual(await local.queryMessages(''), [
     yodaNameMessage(),
     yodaAge900Message(),
     yodaAge950Message(),
   ])
-  expect(await local.queryMessages(yodaAge900Message().timestamp)).toEqual([
+  deepEqual(await local.queryMessages(yodaAge900Message().timestamp), [
     yodaAge900Message(),
     yodaAge950Message(),
   ])
@@ -195,9 +189,9 @@ test('MemLocal.queryLatestMessages', async () => {
   const local = new MemLocal()
   const originalIn = [yodaNameMessage(), yodaAge900Message()]
   await local.storeMessages(originalIn)
-  expect(await local.queryLatestMessages(originalIn)).toEqual(originalIn)
+  deepEqual(await local.queryLatestMessages(originalIn), originalIn)
   await local.storeMessages([yodaAge950Message()])
-  expect(await local.queryLatestMessages(originalIn)).toEqual([
+  deepEqual(await local.queryLatestMessages(originalIn), [
     yodaNameMessage(),
     yodaAge950Message(),
   ])
@@ -265,7 +259,7 @@ test('Sync Basic', async () => {
   // @ts-expect-error private member access
   sideA.syncDB.nextSync = null
   await sideA.syncDB.sync()
-  expect(sideA.local.db).toEqual({
+  deepEqual(sideA.local.db, {
     people: {
       '123': {
         id: '123',
@@ -274,16 +268,16 @@ test('Sync Basic', async () => {
       },
     },
   })
-  expect(sideA.local.db).toEqual(sideB.local.db)
-  expect(sideA.remote.history.length).toBe(1)
-  expect(sideA.remote.history[0].in.messages.length).toBe(2)
-  expect(sideA.remote.history[0].out.messages.length).toBe(0)
+  deepEqual(sideA.local.db, sideB.local.db)
+  strictEqual(sideA.remote.history.length, 1)
+  strictEqual(sideA.remote.history[0].in.messages.length, 2)
+  strictEqual(sideA.remote.history[0].out.messages.length, 0)
 
   await sideB.syncDB.send([yodaAge950Message()])
   // @ts-expect-error private member access
   sideB.syncDB.nextSync = null
   await sideA.syncDB.sync()
-  expect(sideA.local.db).toEqual({
+  deepEqual(sideA.local.db, {
     people: {
       '123': {
         id: '123',
@@ -292,10 +286,10 @@ test('Sync Basic', async () => {
       },
     },
   })
-  expect(sideA.local.db).toEqual(sideB.local.db)
-  expect(sideA.remote.history.length).toBe(2)
-  expect(sideA.remote.history[1].in.messages.length).toBe(0)
-  expect(sideA.remote.history[1].out.messages.length).toBe(1)
+  deepEqual(sideA.local.db, sideB.local.db)
+  strictEqual(sideA.remote.history.length, 2)
+  strictEqual(sideA.remote.history[1].in.messages.length, 0)
+  strictEqual(sideA.remote.history[1].out.messages.length, 1)
 })
 
 test('3 way Sync', async () => {
@@ -311,7 +305,7 @@ test('3 way Sync', async () => {
   // @ts-expect-error private member access
   sideB.syncDB.nextSync = null
   await sideB.syncDB.sync()
-  expect(sideB.local.db).toEqual({
+  deepEqual(sideB.local.db, {
     people: {
       '123': {
         id: '123',
@@ -320,15 +314,15 @@ test('3 way Sync', async () => {
       },
     },
   })
-  expect(sideB.local.db).toEqual(server.db)
-  expect(sideB.remote.history.length).toBe(1)
-  expect(sideB.remote.history[0].in.messages.length).toBe(2)
-  expect(sideB.remote.history[0].out.messages.length).toBe(0)
+  deepEqual(sideB.local.db, server.db)
+  strictEqual(sideB.remote.history.length, 1)
+  strictEqual(sideB.remote.history[0].in.messages.length, 2)
+  strictEqual(sideB.remote.history[0].out.messages.length, 0)
 
   // Now Side A syncs, with it's older messages.
   // Server state should still be what it was and Side A should have caught up.
   await sideA.syncDB.sync()
-  expect(sideA.local.db).toEqual({
+  deepEqual(sideA.local.db, {
     people: {
       '123': {
         id: '123',
@@ -337,14 +331,14 @@ test('3 way Sync', async () => {
       },
     },
   })
-  expect(sideA.local.db).toEqual(server.db)
-  expect(sideA.remote.history.length).toBe(1)
-  expect(sideA.remote.history[0].in.messages.length).toBe(1)
-  expect(sideA.remote.history[0].out.messages.length).toBe(2)
+  deepEqual(sideA.local.db, server.db)
+  strictEqual(sideA.remote.history.length, 1)
+  strictEqual(sideA.remote.history[0].in.messages.length, 1)
+  strictEqual(sideA.remote.history[0].out.messages.length, 2)
 
   // Side B sync should not change things.
   await sideB.syncDB.sync()
-  expect(sideB.local.db).toEqual({
+  deepEqual(sideB.local.db, {
     people: {
       '123': {
         id: '123',
@@ -353,9 +347,9 @@ test('3 way Sync', async () => {
       },
     },
   })
-  expect(sideB.remote.history.length).toBe(2)
-  expect(sideB.remote.history[1].in.messages.length).toBe(0)
-  expect(sideB.remote.history[1].out.messages.length).toBe(1)
+  strictEqual(sideB.remote.history.length, 2)
+  strictEqual(sideB.remote.history[1].in.messages.length, 0)
+  strictEqual(sideB.remote.history[1].out.messages.length, 1)
 })
 
 const after = (timeout: number) =>
@@ -370,7 +364,7 @@ test('settles with one scheduleSync', async () => {
   }
   await sideA.syncDB.send([yodaAge900Message()])
   await sideA.syncDB.settle()
-  expect(sync).toBe(1)
+  strictEqual(sync, 1)
 })
 
 test('settles with two scheduleSync', async () => {
@@ -383,7 +377,7 @@ test('settles with two scheduleSync', async () => {
   await sideA.syncDB.send([yodaAge900Message()])
   await sideA.syncDB.send([yodaAge950Message()])
   await sideA.syncDB.settle()
-  expect(sync).toBe(1)
+  strictEqual(sync, 1)
 })
 
 test('settles with scheduleSync during a running scheduleSync', async () => {
@@ -400,5 +394,5 @@ test('settles with scheduleSync during a running scheduleSync', async () => {
   }
   await sideA.syncDB.send([yodaAge900Message()])
   await sideA.syncDB.settle()
-  expect(sync).toBe(2)
+  strictEqual(sync, 2)
 })
